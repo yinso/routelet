@@ -8,6 +8,7 @@ loglet = require 'loglet'
 util = require './util'
 errorlet = require 'errorlet'
 _ = require 'underscore'
+History = require './history'
 
 isFunction = (o) ->
   typeof(o) == 'function' or o instanceof Function
@@ -28,6 +29,7 @@ $.fn.formValue = (evt) ->
   obj[evt.target.name] = evt.target.value
   obj
 
+
 defaultOptions = 
   pageID: '#main'
   modalID: '#myModal'
@@ -46,19 +48,21 @@ class Application
     @location = util.parse window.location.href
     @router = new Router()
     @options.modalID ||= '#myModal'
+    # I think the idea is to have some sort of timestamp... 
+    # also trying to figure out whether or not something has 
   initialize: (options, cb) ->
     app = @
     $ = app.$
     $ () ->
+      app.history = new History $, app.location.path
       #window.onerror = (evt) ->
       #  loglet.log 'uncaught exception', arguments
       app.initializeWidgets()
       $(document)
         .on 'inserted', (evt, res, options = {}) ->
           app.initializeWidgets res.elements
-          loglet.log 'inserted', evt, res, options, history.pushState
-          if options.url and history.pushState
-            history.pushState options, null, options.url
+          if options.url
+            app.history.pushStateIf options, null, options.url, res.request.popState
           false
         .on 'submit', 'form', (evt) ->
           req = Request.fromForm @, evt, app
@@ -73,13 +77,10 @@ class Application
             req = Request.fromAnchor @, evt, app
             app.dispatch req
             false
-      if history.pushState
-        $(window)
-          .on 'popstate', (evt) ->
-            loglet.log 'window.popState', arguments
-            req = Request.fromPopState evt, app
-            app.dispatch req
-        history.pushState {page: '#main', url: util.normalizeURL(location)}, null, util.normalizeURL(location)
+      app.history.on 'popstate', (evt) ->
+        loglet.log 'window.popState', evt
+        req = Request.fromPopState evt, app
+        app.dispatch req
       if isFunction(cb)
         cb app
     app

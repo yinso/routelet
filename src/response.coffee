@@ -26,7 +26,6 @@ class Response
       throw errorlet.create {error: 'unknown_data_type', contentType: contentType, url: uri, data: data}
   @createError: (req, xhr, data) ->
     contentType = xhr.getResponseHeader('Content-Type')
-    loglet.log 'Response.createError', req.url, data, contentType, xhr
     error = errorlet.create {error: 'http_response_error', statusCode: xhr.status}
     if contentType.match /^application\/json/i
       try 
@@ -43,12 +42,9 @@ class Response
   constructor: (@options) ->
     _.extend @, @options
     @url = @normalizeURL @url
-    loglet.log 'Response.ctor', @url
   normalizeURL: (uri) ->
     parsed = util.parse uri
-    loglet.log 'Response.normalizeURL:before', parsed
     delete parsed.query[@request.app.options.stateKeys.layout]
-    loglet.log 'Response.normalizeURL:after', parsed
     util.stringify parsed
   modal: () ->
     app = @request.app

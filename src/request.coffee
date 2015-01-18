@@ -37,9 +37,9 @@ class Request
       method: 'get'
       url: evt.originalEvent.state?.url or evt.originalEvent.explicitOriginalTarget.location.href
       app: app
+      popState: evt.originalEvent.state
   constructor: (params) ->
     _.extend @, params
-    loglet.log 'Request.ctor', @url
     parsed = util.parse @url
     @query = _.extend @params or {}, parsed.query or {}
     @headers ||= {}
@@ -65,7 +65,6 @@ class Request
     $ = @app.$
     req = @
     data = @app.normalizeData @body
-    loglet.log 'request.post', @url, @headers, data
     $.ajax 
       type: 'post'
       url: @url
@@ -87,7 +86,6 @@ class Request
     $ = @app.$
     req = @
     data = @app.normalizeData @body
-    loglet.log 'request.post', @url, @headers, data
     $.ajax 
       type: 'get'
       url: @url

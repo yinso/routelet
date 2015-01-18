@@ -55,7 +55,6 @@ class Router
     result
   dispatch: (req, cb = () ->) ->
     routes = @match req
-    loglet.log 'Router.run', req, routes
     @_runRoutes routes, 0, null, req, cb
   # when we jump route we might have jump to an error route... so it's something we need to make sure 
   # we preserve 
