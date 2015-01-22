@@ -21,23 +21,26 @@ class Request
         'Content-Type': if enctype == multipart_form_data then false else "#{enctype}; charset=#{charset}" 
       target: $(form).prop('target') or '_self'
       app: app
-  @fromAnchor: (form, evt, app) ->
+      properties:  $(form).data()
+  @fromAnchor: (anchor, evt, app) ->
     new @ 
       method: 'get'
-      url: $(form).prop('href')
-      lang: $(form).prop('hreflang') or 'en' 
-      type: $(form).prop('type') or 'text/html'
-      download: $(form).prop('download') or false
-      media: $(form).prop('media') 
-      rel: $(form).prop('rel')
-      target: $(form).prop('target')
+      url: $(anchor).prop('href')
+      lang: $(anchor).prop('hreflang') or 'en' 
+      type: $(anchor).prop('type') or 'text/html'
+      download: $(anchor).prop('download') or false
+      media: $(anchor).prop('media') 
+      rel: $(anchor).prop('rel')
+      target: $(anchor).prop('target')
       app: app
-  @fromPopState: (evt, app) ->
+      properties: $(anchor).data()
+  @fromPopState: (state, app) ->
     new @
       method: 'get'
-      url: evt.originalEvent.state?.url or evt.originalEvent.explicitOriginalTarget.location.href
+      url: state.url
       app: app
-      popState: evt.originalEvent.state
+      popState: state
+      properties:  {}
   constructor: (params) ->
     _.extend @, params
     parsed = util.parse @url

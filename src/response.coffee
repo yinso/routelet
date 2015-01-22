@@ -46,10 +46,14 @@ class Response
     parsed = util.parse uri
     delete parsed.query[@request.app.options.stateKeys.layout]
     util.stringify parsed
-  modal: () ->
+  render: () ->
+    if @request.properties.hasOwnProperty('modal')
+      @modal @request.properties.modal
+    else
+      @page()
+  modal: (modalID = @request.app.options.modalID) ->
     app = @request.app
     $ = app.$
-    modalID = app.options.modalID
     if not @elements
       throw errorlet.create {error: 'modal_not_a_visual_response'}
     else
@@ -72,9 +76,11 @@ class Response
     app = @request.app
     $ = app.$
     pageID = app.options.pageID
-    $(pageID)
-      .empty()
-      .append(@elements)
-      .trigger 'inserted', [@, {url: @url, page: pageID}]
+    $(pageID).fadeOut 'slow', () =>
+      $(pageID)
+        .empty()
+        .append(@elements)
+        .fadeIn('slow')
+        .trigger 'inserted', [@, {url: @url, page: pageID}]
 
 module.exports = Response

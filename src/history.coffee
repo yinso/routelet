@@ -19,20 +19,20 @@ class History extends EventEmitter
     @inner = []
     @current = 0
     entry = @addState {}, null, url
-    if history.replaceState
+    if history.replaceState # this statement not sure if it matters...
       history.replaceState entry, null, url
     @$(window)
       .on 'popstate', (evt) =>
         loglet.log 'History.onPopState', evt
         entry = evt.originalEvent.state
-        if entry
+        if entry # we simply do not deal with null states - this is so we have a chance to handle the appropriate URL - it doesn't exist as part of the event.
           index = @findState entry
           # why do I care about the state? even by finding state though we won't know for sure we are moving forward or backward...
           # not unless we have the ability to carry through the full state throughout the handling chain.
-          evt.historyIndex = index
-          evt.historyDirection = if index > @current then 'forward' else 'backward'
-          evt.historyObject = @
-          @emit 'popstate', evt
+          #evt.historyIndex = index
+          #evt.historyDirection = if index > @current then 'forward' else 'backward'
+          #evt.historyObject = @
+          @emit 'popstate', entry
     @$(document)
       .on 'click', 'a', (evt) =>
         @clearForward()
