@@ -22,6 +22,7 @@ class Request
       target: $(form).prop('target') or '_self'
       app: app
       properties:  $(form).data()
+      element: form
   @fromAnchor: (anchor, evt, app) ->
     new @ 
       method: 'get'
@@ -34,6 +35,7 @@ class Request
       target: $(anchor).prop('target')
       app: app
       properties: $(anchor).data()
+      element: anchor
   @fromPopState: (state, app) ->
     new @
       method: 'get'
@@ -64,15 +66,13 @@ class Request
         @post cb
       else
         cb null, errorlet.create {error: 'unimplemented_http_request', method: @method, request: @}
-  post: (cb) ->
+  request: (options, cb) ->
     $ = @app.$
     req = @
-    data = @app.normalizeData @body
     $.ajax 
-      type: 'post'
-      url: @url
-      headers: @headers
-      data: data
+      type: options.type or 'post'
+      url: options.url or @url
+      data: options.data or @app.normalizeData @body
       success: (data, status, xhr) ->
         try 
           res = Response.createSuccess req, xhr, data
@@ -85,27 +85,9 @@ class Request
           cb null, res
         catch e
           cb e
+  post: (cb) ->
+    @request {type: 'post', url: @url, headers: @headers, data: @app.normalizeData(@body)}, cb
   get: (cb) ->
-    $ = @app.$
-    req = @
-    data = @app.normalizeData @body
-    $.ajax 
-      type: 'get'
-      url: @url
-      headers: @headers
-      data: data
-      success: (data, status, xhr) ->
-        try 
-          res = Response.createSuccess req, xhr, data
-          cb null, res
-        catch e
-          cb e
-      error: (xhr, status, error) ->
-        loglet.log 'request.get', req.url, status, error
-        try
-          res = Response.createError req, xhr, error
-          cb null, res
-        catch e
-          cb e
+    @request {type: 'get', url: @url, headers: @headers, data: @app.normalizeData(@body)}, cb
 
 module.exports = Request

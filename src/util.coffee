@@ -1,4 +1,5 @@
 url = require 'url'
+$ = require 'jquery'
 
 normalizeURL = (uri) ->
   parsed = url.parse uri
@@ -11,6 +12,7 @@ parse = (uri) ->
 
 stringify = (uri) ->
   url.format uri
+
 
 module.exports = 
   normalizeURL: normalizeURL

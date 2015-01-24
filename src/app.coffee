@@ -2,13 +2,13 @@ Router = require './router'
 Request = require './request'
 $ = require 'jquery'
 require 'bootstrap'
-require 'bootstrap.tagsinput'
-require 'bootstrap.wysiwyg'
 loglet = require 'loglet'
 util = require './util'
 errorlet = require 'errorlet'
 _ = require 'underscore'
 History = require './history'
+Validator = require 'checklet'
+{EventEmitter} = require 'events'
 
 isFunction = (o) ->
   typeof(o) == 'function' or o instanceof Function
@@ -24,11 +24,11 @@ aryToObj = (ary, obj = {}) ->
       obj[name] = value
   obj
 
-$.fn.formValue = (evt) ->
+$.fn.formValue = (evt = {}) ->
   obj = aryToObj($(this).serializeArray())
-  obj[evt.target.name] = evt.target.value
+  if evt.hasOwnProperty('target')
+    obj[evt.target.name] = evt.target.value
   obj
-
 
 defaultOptions = 
   pageID: '#main'
@@ -38,8 +38,10 @@ defaultOptions =
     layout: '*l'
   everyReq: {}
 
-class Application
+
+class Application extends EventEmitter
   @Router: Router
+  @Validator: Validator
   @create: (options = {}) ->
     new @ options
   constructor: (options = {}) ->
@@ -65,8 +67,7 @@ class Application
             app.history.pushStateIf options, null, options.url, res.request.popState
           false
         .on 'submit', 'form', (evt) ->
-          req = Request.fromForm @, evt, app
-          app.dispatch req
+          app.onFormSubmit @, evt
           false
         .on 'click', 'a', (evt) ->
           loglet.log 'a.click', @, app.isExternalURL $(@).prop('href')
@@ -111,13 +112,52 @@ class Application
     app = @
     elts.find('form')
       .each (i, form) ->
-        loglet.log 'Application.initializeForm', form
-      ###
-      .on 'submit', (evt) ->
-        req = Request.fromForm @, evt, app
-        app.dispatch req
-        false
-      ###
+        app.bindForm form
+  bindForm: (form) ->
+    app = @
+    $ = @$
+    obj = {}
+    bindElement = (elt) ->
+      if $(elt).data('validate')
+        validator = Validator.make $(elt).data('validate')
+        validator.on 'validate-error', (err) ->
+          app.emit 'validate-error', elt, err
+        $(elt).on 'blur', (evt) ->
+          validator.validate $(elt).val()
+        obj[$(elt).prop('name')] = validator
+    for elt in form.elements
+      bindElement elt
+    formValidator = Validator.make {object: obj}
+    formValidator.on 'validate-error', (err) ->
+      #loglet.error 'form-validate', err
+      app.raiseFormError form, err
+    #formValidator.on 'validate-ok', (err) ->
+    #  app.raiseFormError form, err
+    $(form).data '_validator', formValidator
+  onFormSubmit: (form, evt) ->
+    try 
+      app = @
+      $ = @$
+      validator = $(form).data('_validator')
+      data = $(form).formValue(evt)
+      loglet.log 'onFormSubmit', form, evt, data
+      validator.async data, (err) =>
+        try 
+          if err 
+            app.raiseFormError form, err
+          else
+            req = Request.fromForm form, evt, app
+            loglet.log 'onFormSubmit.OK', req, evt
+            app.dispatch req
+        catch e 
+          loglet.error 'onFormSubmit.dispatch.error', e
+    catch e
+      loglet.error e
+  raiseFormError: (form, err) ->
+    for key, error of err.errors or {}
+      elt = form.elements[key]
+      if elt
+        @emit 'validate-error', elt, error
   isExternalURL: (href) ->
     parsed = util.parse href
     @location.host != parsed.host

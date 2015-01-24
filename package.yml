@@ -20,6 +20,7 @@ dependencies:
   errorlet: '>=0.1.0'
   loglet: '>=0.1.1'
   path-to-regexp: =1.0.2
+  checklet: '>=0.1.0'
 devDependencies:
   coffee-script: =1.8.0
   testlet: '>= 0.2.0'

@@ -21,7 +21,9 @@ class Response
     if contentType.match /^text\/html/i
       new @ {elements: $(data), request: req, url: uri}
     else if contentType.match /^application\/json/i
-      new @ {data: JSON.parse(data), request: req, url: uri}
+      obj = 
+        if data instanceof Object then data else JSON.parse(data)
+      new @ {data: obj, request: req, url: uri}
     else
       throw errorlet.create {error: 'unknown_data_type', contentType: contentType, url: uri, data: data}
   @createError: (req, xhr, data) ->
