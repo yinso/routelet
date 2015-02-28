@@ -43,6 +43,12 @@ class Request
       app: app
       popState: state
       properties:  {}
+  @fromURL: (url, app) ->
+    new @
+      method: 'get'
+      url: url
+      app: app
+      properties: {}
   constructor: (params) ->
     _.extend @, params
     parsed = util.parse @url
@@ -69,10 +75,11 @@ class Request
   request: (options, cb) ->
     $ = @app.$
     req = @
+    data = _.extend (if @app.pageMode == 'modal' then {'*l': false} else {}), (options.data or @app.normalizeData @body)
     $.ajax 
       type: options.type or 'post'
       url: options.url or @url
-      data: options.data or @app.normalizeData @body
+      data: data
       success: (data, status, xhr) ->
         try 
           res = Response.createSuccess req, xhr, data
@@ -89,5 +96,8 @@ class Request
     @request {type: 'post', url: @url, headers: @headers, data: @app.normalizeData(@body)}, cb
   get: (cb) ->
     @request {type: 'get', url: @url, headers: @headers, data: @app.normalizeData(@body)}, cb
+  download: () ->
+    window.location = @url
+    
 
 module.exports = Request

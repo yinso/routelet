@@ -50,6 +50,7 @@ class Application extends EventEmitter
     @location = util.parse window.location.href
     @router = new Router()
     @options.modalID ||= '#myModal'
+    @pageMode = 'page' # can be either page or modal... it's controlled by the change...
     # I think the idea is to have some sort of timestamp... 
     # also trying to figure out whether or not something has 
   initialize: (options, cb) ->
@@ -70,10 +71,13 @@ class Application extends EventEmitter
           app.onFormSubmit @, evt
           false
         .on 'click', 'a', (evt) ->
-          loglet.log 'a.click', @, app.isExternalURL $(@).prop('href')
-          if app.isExternalURL $(@).prop('href')
-            window.open $(@).prop('href'), '_blank'
+          href = util.parse $(@).prop('href')
+          loglet.log 'a.click', @, app.isExternalURL href
+          if app.isExternalURL href
+            window.open href.href, '_blank'
             false
+          else if href.protocol == 'javascript:' # we will assume this is something done by the developer because we will handle XSS...
+            true
           else
             req = Request.fromAnchor @, evt, app
             app.dispatch req
@@ -103,6 +107,8 @@ class Application extends EventEmitter
     @_add /^delete$/, routePath, middlewares, handle
   # but this is not the problem... what we want to do is to actually bind the 
   dispatch: (req, cb = () ->) ->
+    if typeof(req) == 'string' # an url.
+      req = Request.fromURL req, @
     @router.dispatch req, cb
   # I want this to 
   initializeWidgets: (elts = @$(document)) ->
@@ -159,8 +165,15 @@ class Application extends EventEmitter
       if elt
         @emit 'validate-error', elt, error
   isExternalURL: (href) ->
-    parsed = util.parse href
-    @location.host != parsed.host
+    parsed = 
+      if href instanceof Object
+        href
+      else
+        util.parse href
+    if parsed.protocol == 'javascript:'
+      false
+    else
+      @location.host != parsed.host
   initializeAnchors: (elts) ->
     app = @
     elts.find('a')
@@ -183,7 +196,16 @@ class Application extends EventEmitter
     state[@options.stateKeys.layout] = false
     data = _.extend {}, @options.everyReq or {}, state, data
     data
-  modal: (res) ->
+  setPageMode: (mode) ->
     $ = @$
+    @pageMode = mode
+    if @pageMode == 'modal'
+      $(@options.modalID).modal
+        show: true
+        keyboard: true
+        backdrop: true
+    else
+      $(@options.modalID).modal 'hide'
+      
 
 module.exports = Application
