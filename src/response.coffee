@@ -21,13 +21,15 @@ class Response
       @createError req, xhr, data
   @createSuccess: (req, xhr, data) ->
     $ = req.app.$
-    contentType = xhr.getResponseHeader('Content-Type')
+    contentType = xhr.getResponseHeader('content-type')
     uri = xhr.getResponseHeader('X-URL')
     resetModal = _hasResetModal xhr
     clientRedirect = xhr.getResponseHeader('X-CLIENT-REDIRECT')
     if clientRedirect
       # we want to now cause a client-side redirect...
       new @ {redirectURL: clientRedirect, request: req, url: uri, resetModal: resetModal}
+    else if not contentType # no content type there might not be anything to show
+      throw errorlet.create {error: 'unknown_data_type', contentType: contentType, url: uri, data: data, resetModal: resetModal}
     else if contentType.match /^text\/html/i
       new @ {elements: $(data), request: req, url: uri, resetModal: resetModal}
     else if contentType.match /^application\/json/i
@@ -39,18 +41,21 @@ class Response
   @createError: (req, xhr, data) ->
     contentType = xhr.getResponseHeader('Content-Type')
     error = errorlet.create {error: 'http_response_error', statusCode: xhr.status}
-    if contentType.match /^application\/json/i
+    if not contentType
+      new @ {error: error, request: req, url: req.url}
+    else if contentType.match /^application\/json/i
       try 
         obj = JSON.parse(data)
         for key, val of obj
           error[key] = val
-        new @ {error: error, request: req}
+        new @ {error: error, request: req, url: req.url}
       catch e
         error.data = data
     else if contentType.match /^text\/html/i
-      new @ {error: error, elements: $(data), request: req}
+      loglet.log 'error.html', req.url, contentType, data
+      new @ {error: error, elements: $(data), request: req, url: req.url}
     else
-      new @ {error: error, request: req}
+      new @ {error: error, request: req, url: req.url}
   constructor: (@options) ->
     _.extend @, @options
     @url = @normalizeURL @url
@@ -58,7 +63,7 @@ class Response
     parsed = util.parse uri
     delete parsed.query[@request.app.options.stateKeys.layout]
     util.stringify parsed
-  render: () ->
+  render: (elementID = null) ->
     # we go to modal for the following reasons... 
     # modal 
     loglet.log 'Response.render.resetModal', @resetModal, @request.app.pageMode
@@ -69,7 +74,7 @@ class Response
     else if @request.properties.hasOwnProperty('modal') or @request.app.pageMode == 'modal'
       @modal @request.properties.modal
     else
-      @page()
+      @page(elementID)
   modal: (modalID = @request.app.options.modalID) ->
     app = @request.app
     $ = app.$
@@ -77,11 +82,11 @@ class Response
       throw errorlet.create {error: 'modal_not_a_visual_response'}
     else
       app.setPageMode 'modal'
-      $("#{modalID} .modal-body").fadeOut 'slow', () =>
+      $("#{modalID} .modal-body").fadeOut 'fast', () =>
         $("#{modalID} .modal-body")
           .empty()
           .append(@elements)
-          .fadeIn('slow')
+          .fadeIn('fast')
           .trigger('inserted', @)
       title = @elements.find("div.title").text()
       @elements.find("div.title").empty()
@@ -94,16 +99,23 @@ class Response
     _.extend parsed.query, data
     normalized = util.stringify(parsed)
     @request.app.dispatch normalized
-  page: () ->
+  renderWidget: (elementID) ->
     app = @request.app
     $ = app.$
-    pageID = app.options.pageID
-    app.setPageMode 'page'
-    $(pageID).fadeOut 'slow', () =>
-      $(pageID)
+    $(elementID).fadeOut 'fast', () =>
+      $(elementID)
         .empty()
         .append(@elements)
-        .fadeIn('slow')
-        .trigger 'inserted', [@, {url: @url, page: pageID}]
+        .fadeIn('fast')
+  page: (elementID = @request.app.options.pageID) ->
+    app = @request.app
+    $ = app.$
+    app.setPageMode 'page'
+    $(elementID).fadeOut 'fast', () =>
+      $(elementID)
+        .empty()
+        .append(@elements)
+        .fadeIn('fast')
+        .trigger 'inserted', [@, {url: @url, page: elementID}]
 
 module.exports = Response

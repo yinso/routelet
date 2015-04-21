@@ -87,8 +87,9 @@ class Request
         catch e
           cb e
       error: (xhr, status, error) ->
+        loglet.log 'request.error', options.url or @url, xhr, status, error
         try
-          res = Response.createError req, xhr, data
+          res = Response.createError req, xhr, xhr.responseText
           cb null, res
         catch e
           cb e

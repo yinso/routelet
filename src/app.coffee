@@ -26,6 +26,7 @@ aryToObj = (ary, obj = {}) ->
 
 $.fn.formValue = (evt = {}) ->
   obj = aryToObj($(this).serializeArray())
+  loglet.log 'form.Value', evt
   if evt.hasOwnProperty('target')
     obj[evt.target.name] = evt.target.value
   obj
@@ -71,8 +72,9 @@ class Application extends EventEmitter
           app.onFormSubmit @, evt
           false
         .on 'click', 'a', (evt) ->
+          if $(@).attr('href') == '#' # not meant to be handled here.
+            return false
           href = util.parse $(@).prop('href')
-          loglet.log 'a.click', @, app.isExternalURL href
           if app.isExternalURL href
             window.open href.href, '_blank'
             false

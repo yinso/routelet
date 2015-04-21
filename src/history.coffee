@@ -51,10 +51,11 @@ class History extends EventEmitter
     entry
   pushState: (state, title, url) ->
     entry = @addState state, title, url
+    loglet.log 'History.pushState', state, title, url, entry
     history.pushState entry, title, url
   pushStateIf: (state, title, url, popState) ->
+    loglet.log 'History.pushStateIf', state, title, url, popState
     if not popState
-      loglet.log 'History.pushState', url, state
       @pushState state, title, url
   replaceState: (state, title, url) ->
     history.replaceState state, title, url
