@@ -1,11 +1,11 @@
 # -*- coffee -*- -p
 author: 'YC <yinso.chen@gmail.com>'
-name: 'pagelet'
+name: 'routelet'
 description: 'client-side application framework'
 version: '0.1.0'
 repository:
   type: 'git'
-  url: 'git://github.com/yinso/pagelet.git'
+  url: 'git://github.com/yinso/routelet.git'
 main: './lib/'
 engines:
   node: '>= 0.8.4'
