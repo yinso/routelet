@@ -90,7 +90,7 @@ class Request
         loglet.log 'request.error', options.url or @url, xhr, status, error
         try
           res = Response.createError req, xhr, xhr.responseText
-          cb null, res
+          cb res.error, res
         catch e
           cb e
   post: (cb) ->

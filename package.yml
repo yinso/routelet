@@ -1,10 +1,9 @@
-# -*- coffee -*- -p
-author: 'YC <yinso.chen@gmail.com>'
-name: 'routelet'
-description: 'client-side application framework'
-version: '0.1.0'
+author: YC <yinso.chen@gmail.com>
+name: routelet
+description: client-side application framework
+version: 0.1.1
 repository:
-  type: 'git'
+  type: git
   url: 'git://github.com/yinso/routelet.git'
 main: './lib/'
 engines:

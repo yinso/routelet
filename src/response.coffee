@@ -81,7 +81,7 @@ class Response
     if not @elements
       throw errorlet.create {error: 'modal_not_a_visual_response'}
     else
-      app.setPageMode 'modal'
+      app.setPageMode 'modal', modalID
       $("#{modalID} .modal-body").fadeOut 'fast', () =>
         $("#{modalID} .modal-body")
           .empty()

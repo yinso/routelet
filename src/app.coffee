@@ -72,14 +72,16 @@ class Application extends EventEmitter
           app.onFormSubmit @, evt
           false
         .on 'click', 'a', (evt) ->
-          if $(@).attr('href') == '#' # not meant to be handled here.
+          if $(@).attr('href') in ['#', '', undefined, null] # not meant to be handled here.
             return false
           href = util.parse $(@).prop('href')
           if app.isExternalURL href
             window.open href.href, '_blank'
-            false
+            return false
           else if href.protocol == 'javascript:' # we will assume this is something done by the developer because we will handle XSS...
-            true
+            return true
+          else if $(@).attr('download')
+            return true
           else
             req = Request.fromAnchor @, evt, app
             app.dispatch req
@@ -198,16 +200,16 @@ class Application extends EventEmitter
     state[@options.stateKeys.layout] = false
     data = _.extend {}, @options.everyReq or {}, state, data
     data
-  setPageMode: (mode) ->
+  setPageMode: (mode, modalID = @options.modalID) ->
     $ = @$
     @pageMode = mode
     if @pageMode == 'modal'
-      $(@options.modalID).modal
+      $(modalID).modal
         show: true
         keyboard: true
         backdrop: true
     else
-      $(@options.modalID).modal 'hide'
+      $(modalID).modal 'hide'
       
 
 module.exports = Application
